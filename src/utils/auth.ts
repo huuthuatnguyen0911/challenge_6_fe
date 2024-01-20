@@ -1,5 +1,7 @@
 import { User } from "src/types/user.type"
 
+export const LocalStorageEventTarget = new EventTarget()
+
 export const setAccessTokentoLS = (access_token: string) => {
   localStorage.setItem('access_token', access_token)
 }
@@ -7,6 +9,8 @@ export const setAccessTokentoLS = (access_token: string) => {
 export const clearLS = () => {
   localStorage.removeItem('access_token')
   localStorage.removeItem('profile')
+  const clearEvent = new Event('clearLS')
+  LocalStorageEventTarget.dispatchEvent(clearEvent)
 }
 
 export const getAccessTokenFromLS = () => localStorage.getItem('access_token') || ''

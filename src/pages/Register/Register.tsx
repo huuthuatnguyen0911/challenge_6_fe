@@ -1,11 +1,69 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import SocialFooter from 'src/components/SocialFooter/SocialFooter'
 import logo from '../../assets/logo.svg'
 import email_icon from '../../assets/icon_email.svg'
 import pass_icon from '../../assets/icon_pass.svg'
 import FooterModal from 'src/components/FooterModel/FooterModal'
+import Input from 'src/components/Input/Input'
+import { Schema, schema } from 'src/utils/rule'
+import { useContext } from 'react'
+import { AppContext } from 'src/contexts/app.context'
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import { useMutation } from '@tanstack/react-query'
+import authApi from 'src/apis/auth.api'
+import { isAxiosUnprocessableEntityError } from 'src/utils/utils'
+import { ErrorResponse } from 'src/types/utils.type'
+import Button from 'src/components/Button/Button'
+
+type FormData = Schema
+
+type ErrorRes = {
+  email: {
+    msg: string
+  }
+  password: {
+    msg: string
+  }
+}
 
 export default function Register() {
+  const { setIsAuthenticated, setProfile } = useContext(AppContext)
+  const navigate = useNavigate()
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors }
+  } = useForm<FormData>({
+    resolver: yupResolver(schema)
+  })
+
+  const registerAccountMutation = useMutation({
+    mutationFn: (body: FormData) => authApi.registerAccount(body)
+  })
+
+  const onSubmit = handleSubmit((data) => {
+    registerAccountMutation.mutate(data, {
+      onSuccess: (data) => {
+        setIsAuthenticated(true)
+        setProfile(data.data.data.user)
+        navigate('/')
+      },
+      onError: (error) => {
+        if (isAxiosUnprocessableEntityError<ErrorResponse<ErrorRes>>(error)) {
+          const formErrors = error.response?.data
+          console.log(formErrors)
+          if (formErrors?.data?.email) {
+            setError('email', { message: formErrors.data.email.msg, type: 'Server' })
+          }
+          if (formErrors?.data?.password) {
+            setError('password', { message: formErrors.data.password.msg, type: 'Server' })
+          }
+        }
+      }
+    })
+  })
   return (
     <div className='flex min-h-screen flex-col text-primary sm:pt-10'>
       <div className='flex-1'>
@@ -20,29 +78,36 @@ export default function Register() {
             </p>
           </div>
           <div className='pt-0 sm:px-[58px] container'>
-            <form className='space-y-2'>
+            <form className='space-y-2' onSubmit={onSubmit} noValidate>
               <div className='relative'>
-                <div className='pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5'>
-                  <img src={email_icon} alt='' className='w-6 h-6' />
-                </div>
-                <input
-                  type='text'
+                <img src={email_icon} alt='' className='w-6 h-6 absolute top-3 left-3' />
+                <Input
+                  type='email'
                   placeholder='Email'
-                  className='flex h-12 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-primary ring-offset-background transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-button focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-12'
+                  register={register}
+                  name='email'
+                  errorMessages={errors.email?.message}
                 />
               </div>
               <div className='relative'>
-                <div className='pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5'>
-                  <img src={pass_icon} alt='' className='w-6 h-6' />
-                </div>
-                <input
+                <img src={pass_icon} alt='' className='w-6 h-6 absolute top-3 left-3' />
+                <Input
                   type='password'
                   placeholder='Password'
                   autoComplete='on'
-                  className='flex h-12 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-primary ring-offset-background transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-button focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-12'
+                  name='password'
+                  register={register}
+                  errorMessages={errors.password?.message}
                 />
               </div>
-              <button className='w-full h-12 bg-blue-600 text-white rounded-xl'>Start coding now</button>
+              <Button
+                type='submit'
+                className='w-full h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center'
+                isLoading={registerAccountMutation.isPending}
+                disabled={registerAccountMutation.isPending}
+              >
+                Start coding now
+              </Button>
             </form>
             <SocialFooter>
               Adready a member?{' '}

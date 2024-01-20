@@ -59,5 +59,20 @@ export const schema = yup.object({
     .matches(/^(?=.*[a-z])/, "Password phải có ít nhất 1 ký tự viết thường")
 })
 
+export const userSchema = yup.object({
+  name: yup.string().min(1, 'Tên tối thiểu chứa 1 kí tự').max(160, 'Tên có độ dài từ 160 ký tự'),
+  phone: yup.string().max(20, 'Số điện thoại có độ dài tối đa 20 ký tự'),
+  bio: yup.string().min(1, 'Bio tối thiểu chứa 1 kí tự').max(160, 'Bio có độ dài 150 ký tự'),
+  newPassword: yup
+    .string()
+    .min(6, 'Password tối thiểu 6 ký tự')
+    .max(160, 'Password có độ dài từ 6-160 ký tự')
+    .matches(/\d/, 'Password phải có ít nhất 1 ký tự số')
+    .matches(/^(?=.*[A-Z])/, "Password phải có ít nhất 1 ký tự viết hoa")
+    .matches(/^(?=.*[a-z])/, "Password phải có ít nhất 1 ký tự viết thường"),
+  avatar: yup.string().max(1000, 'Avatar có độ dài tối đa 1000 ký tự')
+})
+
+export type UserSchema = yup.InferType<typeof userSchema>
 
 export type Schema = yup.InferType<typeof schema>

@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import SocialFooter from 'src/components/SocialFooter/SocialFooter'
 import logo from '../../assets/logo.svg'
 import email_icon from '../../assets/icon_email.svg'
@@ -8,13 +8,28 @@ import { useForm } from 'react-hook-form'
 import { Schema, schema } from 'src/utils/rule'
 import { yupResolver } from '@hookform/resolvers/yup'
 import { useMutation } from '@tanstack/react-query'
-import { login } from 'src/apis/auth.api'
+import authApi from 'src/apis/auth.api'
 import { ErrorResponse } from 'src/types/utils.type'
 import { isAxiosUnprocessableEntityError } from 'src/utils/utils'
+import { useContext } from 'react'
+import { AppContext } from 'src/contexts/app.context'
+import Input from 'src/components/Input/Input'
+import Button from 'src/components/Button/Button'
 
 type FormData = Schema
 
+type ErrorRes = {
+  email: {
+    msg: string
+  }
+  password: {
+    msg: string
+  }
+}
+
 export default function Login() {
+  const { setIsAuthenticated, setProfile } = useContext(AppContext)
+  const navigate = useNavigate()
   const {
     register,
     handleSubmit,
@@ -25,28 +40,25 @@ export default function Login() {
   })
 
   const loginMutation = useMutation({
-    mutationFn: (body: FormData) => login(body)
+    mutationFn: (body: FormData) => authApi.login(body)
   })
 
   const onSubmit = handleSubmit((data) => {
     loginMutation.mutate(data, {
       onSuccess: (data) => {
-        // setIsAuthenticated(true)
-        // setProfile(data.data.data.user)
-        // navigate('/')
-        console.log(data)
+        setIsAuthenticated(true)
+        setProfile(data.data.data.user)
+        navigate('/')
       },
       onError: (error) => {
-        if (isAxiosUnprocessableEntityError<ErrorResponse<FormData>>(error)) {
-          const formErrors = error.response?.data.data
-          // console.log(formErrors)
-          if (formErrors) {
-            Object.keys(formErrors).forEach((key) => {
-              setError(key as keyof FormData, {
-                message: formErrors[key as keyof FormData],
-                type: 'Server'
-              })
-            })
+        if (isAxiosUnprocessableEntityError<ErrorResponse<ErrorRes>>(error)) {
+          const formErrors = error.response?.data
+          console.log(formErrors)
+          if (formErrors?.data?.email) {
+            setError('email', { message: formErrors.data.email.msg, type: 'Server' })
+          }
+          if (formErrors?.data?.password) {
+            setError('password', { message: formErrors.data.password.msg, type: 'Server' })
           }
         }
       }
@@ -64,33 +76,34 @@ export default function Login() {
           <div className='pt-0 sm:px-[58px] container'>
             <form className='space-y-2' onSubmit={onSubmit} noValidate>
               <div className='relative'>
-                <div className='pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5'>
-                  <img src={email_icon} alt='' className='w-6 h-6' />
-                </div>
-                <input
+                <img src={email_icon} alt='' className='w-6 h-6 absolute top-3 left-3' />
+                <Input
                   type='email'
                   placeholder='Email'
-                  {...register('email')}
-                  className='flex h-12 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-primary ring-offset-background transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-button focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-12'
+                  register={register}
+                  name='email'
+                  errorMessages={errors.email?.message}
                 />
               </div>
-              <p className='text-sm font-medium text-destructive'>{errors.email?.message}</p>
               <div className='relative'>
-                <div className='pointer-events-none absolute inset-y-0 start-0 flex items-center ps-3.5'>
-                  <img src={pass_icon} alt='' className='w-6 h-6' />
-                </div>
-                <input
+                <img src={pass_icon} alt='' className='w-6 h-6 absolute top-3 left-3' />
+                <Input
                   type='password'
                   placeholder='Password'
                   autoComplete='on'
-                  {...register('password')}
-                  className='flex h-12 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-primary ring-offset-background transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-button focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-12'
+                  name='password'
+                  register={register}
+                  errorMessages={errors.password?.message}
                 />
               </div>
-              <p className='text-sm font-medium text-destructive'>{errors.password?.message}</p>
-              <button type='submit' className='w-full h-12 bg-blue-600 text-white rounded-xl'>
+              <Button
+                type='submit'
+                className='w-full h-12 bg-blue-600 text-white rounded-xl flex items-center justify-center'
+                isLoading={loginMutation.isPending}
+                disabled={loginMutation.isPending}
+              >
                 Login
-              </button>
+              </Button>
             </form>
             <SocialFooter>
               Don’t have an account yet?{' '}
@@ -100,7 +113,7 @@ export default function Login() {
             </SocialFooter>
           </div>
         </div>
-        <FooterModal />
+        <FooterModal className='max-w-[30rem] sm:mt-5' />
       </div>
     </div>
   )

@@ -1,7 +1,10 @@
-export default function FooterModal() {
+interface Props {
+  className?: string
+}
+export default function FooterModal({ className }: Props) {
   return (
     <footer className='container mx-auto hidden text-sm text-secondary sm:block'>
-      <div className='mx-auto mt-1 flex max-w-[30rem] items-center justify-between sm:mt-5 text-[#828282]'>
+      <div className={`mx-auto mt-1 flex items-center justify-between text-[#828282] ${className ? className : ''}`}>
         <p>
           <span className='sr-only sm:not-sr-only sm:mr-1 sm:inline-block'>created by</span>
           <a

@@ -20,7 +20,7 @@ class Http {
     this.instance.interceptors.request.use(
       (config) => {
         if (this.accessToken) {
-          config.headers.Authorization = this.accessToken
+          config.headers.Authorization = `Bearer ${this.accessToken}`
           return config
         }
         return config
@@ -47,6 +47,9 @@ class Http {
           const data: any | unknown = error.response?.data
           const message = data?.message || error.message
           toast.error(message)
+        }
+        if (error.response?.status === HttpStatusCode.Unauthorized) {
+          clearLS()
         }
         console.log(error)
         return Promise.reject(error)
