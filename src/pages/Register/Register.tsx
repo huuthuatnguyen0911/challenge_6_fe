@@ -15,6 +15,8 @@ import authApi from 'src/apis/auth.api'
 import { isAxiosUnprocessableEntityError } from 'src/utils/utils'
 import { ErrorResponse } from 'src/types/utils.type'
 import Button from 'src/components/Button/Button'
+import Helmet from 'src/components/Helmet/Helmet'
+import { toast } from 'react-toastify'
 
 type FormData = Schema
 
@@ -48,6 +50,7 @@ export default function Register() {
       onSuccess: (data) => {
         setIsAuthenticated(true)
         setProfile(data.data.data.user)
+        toast.success(data.data.message, { autoClose: 3000 })
         navigate('/')
       },
       onError: (error) => {
@@ -66,6 +69,7 @@ export default function Register() {
   })
   return (
     <div className='flex min-h-screen flex-col text-primary sm:pt-10'>
+      <Helmet children='Đăng ký' />
       <div className='flex-1'>
         <div className='rounded-lg bg-card text-card-foreground sm:border sm:shadow-sm mx-auto mb-3 w-full max-w-[30rem] py-2 sm:pt-[48px] sm:pb-[58px]'>
           <div className='flex flex-col space-y-1.5 sm:px-[58px] sm:pb-7 container mb-5 gap-3 sm:mb-0'>
@@ -117,7 +121,7 @@ export default function Register() {
             </SocialFooter>
           </div>
         </div>
-        <FooterModal />
+        <FooterModal className='max-w-[30rem] sm:mt-5' />
       </div>
     </div>
   )

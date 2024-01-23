@@ -19,6 +19,9 @@ const userApi = {
         'Content-Type': 'multipart/form-data'
       }
     })
+  },
+  updatePassword(body: { newPassword: string }) {
+    return http.put<SuccessResponse<string>>('users/change-password', body)
   }
 }
 

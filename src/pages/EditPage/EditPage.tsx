@@ -9,15 +9,44 @@ import { Controller, useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
 import Input from 'src/components/Input/Input'
 import Button from 'src/components/Button/Button'
-import { useEffect } from 'react'
+import { useContext, useEffect, useMemo, useState } from 'react'
 import InputNumber from 'src/components/InputNumber/InputNumber'
 import { toast } from 'react-toastify'
+import { AppContext } from 'src/contexts/app.context'
+import { setProfileToLS } from 'src/utils/auth'
+import { isAxiosUnprocessableEntityError } from 'src/utils/utils'
+import { ErrorResponse } from 'src/types/utils.type'
+import InputFile from 'src/components/InputFile/InputFile'
+import Helmet from 'src/components/Helmet/Helmet'
 
-type FormData = Pick<UserSchema, 'name' | 'phone' | 'avatar' | 'bio'>
+type FormData = Pick<UserSchema, 'name' | 'phone' | 'avatar' | 'bio' | 'newPassword'>
 
-const profileSchema = userSchema.pick(['name', 'phone', 'avatar', 'bio'])
+const profileSchema = userSchema.pick(['name', 'phone', 'avatar', 'bio', 'newPassword'])
+
+type ErrorRes = {
+  name: {
+    msg: string
+  }
+  phone: {
+    msg: string
+  }
+  avatar: {
+    msg: string
+  }
+  bio: {
+    msg: string
+  }
+  password: {
+    msg: string
+  }
+}
 
 export default function EditPage() {
+  const { setProfile } = useContext(AppContext)
+  const [file, setFile] = useState<File>()
+  const previewImage = useMemo(() => {
+    return file ? URL.createObjectURL(file) : ''
+  }, [file])
   const {
     register,
     control,
@@ -31,10 +60,13 @@ export default function EditPage() {
       name: '',
       phone: '',
       avatar: '',
-      bio: ''
+      bio: '',
+      newPassword: ''
     },
     resolver: yupResolver(profileSchema)
   })
+
+  const avatar = watch('avatar')
   const { data: profileData, refetch } = useQuery({
     queryKey: ['profile'],
     queryFn: () => userApi.getProfile()
@@ -43,6 +75,14 @@ export default function EditPage() {
 
   const updateProfileMutation = useMutation({
     mutationFn: (body: any) => userApi.updateProfile(body)
+  })
+
+  const updatePasswordMutation = useMutation({
+    mutationFn: (body: any) => userApi.updatePassword(body)
+  })
+
+  const uploadAvtarMutation = useMutation({
+    mutationFn: (body: any) => userApi.uploadAvatar(body)
   })
 
   useEffect(() => {
@@ -55,13 +95,53 @@ export default function EditPage() {
   }, [profile, setValue])
 
   const onSubmit = handleSubmit(async (data) => {
-    console.log(data)
-    const res = await updateProfileMutation.mutateAsync({ ...data })
-    refetch()
-    toast.success(res.data.message)
+    try {
+      let avatarName = avatar
+      const newPassword = data.newPassword
+      if (file) {
+        const formData = new FormData()
+        formData.append('image', file)
+        const uploadRes = await uploadAvtarMutation.mutateAsync(formData)
+        avatarName = uploadRes.data.data
+        setValue('avatar', avatarName)
+      }
+      if (newPassword !== '') {
+        await updatePasswordMutation.mutateAsync({ password: data.newPassword })
+      }
+      const res = await updateProfileMutation.mutateAsync({ ...data, avatar: avatarName })
+      setProfile(res.data.data)
+      setProfileToLS(res.data.data)
+      refetch()
+      toast.success(res.data.message)
+    } catch (error) {
+      if (isAxiosUnprocessableEntityError<ErrorResponse<ErrorRes>>(error)) {
+        const formErrors = error.response?.data
+        console.log(formErrors)
+        if (formErrors?.data?.phone) {
+          setError('phone', { message: formErrors.data.phone.msg, type: 'Server' })
+        }
+        if (formErrors?.data?.name) {
+          setError('name', { message: formErrors.data.name.msg as string, type: 'Server' })
+        }
+        if (formErrors?.data?.avatar) {
+          setError('avatar', { message: formErrors.data.avatar.msg as string, type: 'Server' })
+        }
+        if (formErrors?.data?.bio) {
+          setError('bio', { message: formErrors.data.bio.msg as string, type: 'Server' })
+        }
+        if (formErrors?.data?.password) {
+          setError('newPassword', { message: formErrors.data.password.msg as string, type: 'Server' })
+        }
+      }
+    }
   })
+  const handleChangFile = (file: File) => {
+    setFile(file)
+  }
+
   return (
     <main className='sm:p-4 md:mt-8'>
+      <Helmet children='Chỉnh sửa thông tin' />
       <div className='container mx-auto mb-6 flex max-w-[53rem] sm:p-0'>
         <div className='inline-flex items-start justify-start gap-2 py-1 text-[#2D9CDB] hover:underline hover:cursor-pointer focus:underline'>
           <img src={icon_back} className='w-5 h-5' alt='image' />
@@ -79,31 +159,29 @@ export default function EditPage() {
               <div className='relative h-[4.5rem] w-[4.5rem]'>
                 <span className='relative flex shrink-0 overflow-hidden h-full w-full'>
                   <img
-                    src={default_user}
-                    className='aspect-square h-full w-full object-cover object-center'
+                    src={previewImage || avatar || default_user}
+                    className='aspect-square h-full w-full object-cover object-center rounded-[8px]'
                     alt='image'
                   />
                 </span>
-                <div className='rounded-[8px] absolute inset-0 flex cursor-pointer flex-col items-center justify-center bg-black/60 transition-colors hover:bg-black/40'>
-                  <img src={icon_camera} alt='' />
-                </div>
+                {!(previewImage || avatar) && (
+                  <div className='rounded-[8px] absolute inset-0 flex cursor-pointer flex-col items-center justify-center bg-black/60 transition-colors hover:bg-black/40'>
+                    <img src={icon_camera} alt='' />
+                  </div>
+                )}
               </div>
-              <input type='file' className='hidden' accept='.jpg,.jpeg,.png' />
-              <button type='button' className='sr-only text-sm uppercase text-secondary sm:not-sr-only'>
-                Change photo
-              </button>
+              <InputFile onChange={handleChangFile} />
             </div>
 
             <div className='text-icon space-y-2'>
               <label className='text-label text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
-                Name
+                Email
               </label>
               <Input
-                classNameInput='flex w-[52%] rounded-md border border-border bg-background text-sm text-primary h-14 p-4 sm:max-w-[26rem]'
-                placeholder='Enter your name...'
-                name='name'
-                register={register}
-                errorMessages={errors.name?.message}
+                disabled
+                type='email'
+                value={profile?.email as string}
+                classNameInput='flex w-[52%] rounded-md border border-border bg-gray-300 disabled:cursor-not-allowed text-sm text-primary h-14 p-4 sm:max-w-[26rem'
               />
             </div>
 
@@ -140,12 +218,15 @@ export default function EditPage() {
 
             <div className='text-icon space-y-2'>
               <label className='text-label text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
-                Email
+                Name
               </label>
               <Input
-                disabled
-                value={profile?.email as string}
-                classNameInput='flex w-[52%] rounded-md border border-border bg-gray-300 disabled:cursor-not-allowed text-sm text-primary h-14 p-4 sm:max-w-[26rem'
+                classNameInput='flex w-[52%] rounded-md border border-border bg-background text-sm text-primary h-14 p-4 sm:max-w-[26rem]'
+                placeholder='Enter your name...'
+                name='name'
+                type='text'
+                register={register}
+                errorMessages={errors.name?.message}
               />
             </div>
 
@@ -153,10 +234,13 @@ export default function EditPage() {
               <label className='text-label text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70'>
                 Password
               </label>
-              <input
+              <Input
+                classNameInput='flex w-[52%] rounded-md border border-border bg-background text-sm text-primary h-14 p-4 sm:max-w-[26rem]'
                 placeholder='Enter your new password...'
-                type='email'
-                className='flex w-[52%] rounded-md border border-border bg-background text-sm text-primary h-14 p-4 sm:max-w-[26rem'
+                name='newPassword'
+                type='password'
+                register={register}
+                errorMessages={errors.newPassword?.message}
               />
             </div>
 

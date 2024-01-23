@@ -15,6 +15,8 @@ import { useContext } from 'react'
 import { AppContext } from 'src/contexts/app.context'
 import Input from 'src/components/Input/Input'
 import Button from 'src/components/Button/Button'
+import Helmet from 'src/components/Helmet/Helmet'
+import { toast } from 'react-toastify'
 
 type FormData = Schema
 
@@ -48,6 +50,7 @@ export default function Login() {
       onSuccess: (data) => {
         setIsAuthenticated(true)
         setProfile(data.data.data.user)
+        toast.success(data.data.message)
         navigate('/')
       },
       onError: (error) => {
@@ -67,6 +70,7 @@ export default function Login() {
 
   return (
     <div className='flex min-h-screen flex-col text-primary sm:py-20'>
+      <Helmet children='Đăng nhập' />
       <div className='flex-1'>
         <div className='rounded-lg bg-card text-card-foreground sm:border sm:shadow-sm mx-auto mb-3 w-full max-w-[30rem] py-2 sm:pt-[48px] sm:pb-[58px]'>
           <div className='flex flex-col space-y-1.5 sm:px-[58px] sm:pb-7 container mb-5 gap-5 sm:mb-0'>

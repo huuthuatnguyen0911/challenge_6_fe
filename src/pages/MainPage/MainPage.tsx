@@ -3,6 +3,7 @@ import InputInfor from 'src/components/InputInfoProfile/InputInfor'
 import { Link } from 'react-router-dom'
 import { useQuery } from '@tanstack/react-query'
 import userApi from 'src/apis/user.api'
+import Helmet from 'src/components/Helmet/Helmet'
 
 export default function MainPage() {
   const { data: profileData } = useQuery({
@@ -13,6 +14,7 @@ export default function MainPage() {
 
   return (
     <main>
+      <Helmet children='Trang chủ' />
       <div className='container mb-10 text-center'>
         <h1 className='mb-2 text-2xl sm:text-4xl'>Personal info</h1>
         <p className='text-sm font-light sm:text-lg'>Basic info, like your name and photo</p>

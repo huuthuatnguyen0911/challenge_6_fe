@@ -6,6 +6,7 @@ import { AppContext } from './contexts/app.context'
 import MainLayout from './layouts/MainLayout/MainLayout'
 import MainPage from './pages/MainPage/MainPage'
 import EditPage from './pages/EditPage/EditPage'
+import ChatPage from './pages/ChatPage/ChatPage'
 
 export default function useRouteElement() {
   function ProtectedRoutes() {
@@ -38,6 +39,10 @@ export default function useRouteElement() {
               <EditPage />
             </MainLayout>
           )
+        },
+        {
+          path: '/chat',
+          element: <ChatPage />
         }
       ]
     },

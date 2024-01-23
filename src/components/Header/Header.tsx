@@ -1,5 +1,5 @@
 import { Menu, Transition } from '@headlessui/react'
-import { Fragment, useContext, useEffect, useRef, useState } from 'react'
+import { Fragment, useContext } from 'react'
 import { ChevronDownIcon } from '@heroicons/react/20/solid'
 import logo from '../../assets/logo.svg'
 import default_user from '../../assets/default_user.png'
@@ -9,18 +9,20 @@ import { AppContext } from 'src/contexts/app.context'
 import { useMutation } from '@tanstack/react-query'
 import authApi from 'src/apis/auth.api'
 import { Link } from 'react-router-dom'
+import { toast } from 'react-toastify'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
 export default function Header() {
-  const { setIsAuthenticated, isAuthenticated, setProfile, profile } = useContext(AppContext)
+  const { setIsAuthenticated, setProfile, profile } = useContext(AppContext)
   const logoutMutation = useMutation({
     mutationFn: () => authApi.logout(),
     onSuccess: () => {
       setIsAuthenticated(false)
       setProfile(null)
+      toast.success('Logout successfully', { autoClose: 3000 })
     },
     onError: (err) => {
       console.log(err)
@@ -39,7 +41,7 @@ export default function Header() {
           <Menu as='div' className='relative inline-block text-left'>
             <div>
               <Menu.Button className='inline-flex justify-center items-center w-full rounded-md gap-[11px] px-4 py-2 text-sm  text-[#333] font-bold hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-offset-gray-100 focus:ring-indigo-500'>
-                <img src={default_user} alt='' className='w-6 h-6 rounded-full object-cover' />
+                <img src={profile?.avatar || default_user} alt='' className='w-6 h-6 rounded-full object-cover' />
                 {profile?.name ? profile.name : profile?.email}
                 <ChevronDownIcon className='-mr-1 ml-2 h-5 w-5' aria-hidden='true' />
               </Menu.Button>
@@ -91,7 +93,7 @@ export default function Header() {
                           )}
                         >
                           <img src={icon_group} alt='' className='w-6 h-6 rounded-full object-cover' />
-                          <Link to='/'>Group chat</Link>
+                          <Link to='/chat'>Group chat</Link>
                         </div>
                       </div>
                     )}
