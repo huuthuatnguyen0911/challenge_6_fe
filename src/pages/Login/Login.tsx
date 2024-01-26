@@ -50,7 +50,7 @@ export default function Login() {
       onSuccess: (data) => {
         setIsAuthenticated(true)
         setProfile(data.data.data.user)
-        toast.success(data.data.message)
+        toast.success(data.data.message, { autoClose: 1000 })
         navigate('/')
       },
       onError: (error) => {

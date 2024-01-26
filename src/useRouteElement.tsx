@@ -43,6 +43,10 @@ export default function useRouteElement() {
         {
           path: '/chat',
           element: <ChatPage />
+        },
+        {
+          path: '/chat/:channelId',
+          element: <ChatPage />
         }
       ]
     },

@@ -11,7 +11,7 @@ class Http {
   constructor() {
     this.accessToken = getAccessTokenFromLS()
     this.instance = axios.create({
-      baseURL: 'http://localhost:4000/',
+      baseURL: import.meta.env.VITE_API_URL as string,
       timeout: 10000,
       headers: {
         'Content-Type': 'application/json'
@@ -46,7 +46,7 @@ class Http {
         if (error.response?.status !== HttpStatusCode.UnprocessableEntity) {
           const data: any | unknown = error.response?.data
           const message = data?.message || error.message
-          toast.error(message)
+          toast.error(message, { autoClose: 1000 })
         }
         if (error.response?.status === HttpStatusCode.Unauthorized) {
           clearLS()

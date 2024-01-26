@@ -9,3 +9,12 @@ export function isAxiosError(error: unknown): error is AxiosError {
 export function isAxiosUnprocessableEntityError<FormError>(error: unknown): error is AxiosError<FormError> {
   return isAxiosError(error) && error.response?.status === HttpStatusCode.UnprocessableEntity
 }
+
+export const transformName = (name: string) => {
+  const splitted = name.split(" ");
+  let final = "";
+  splitted.forEach((word) => {
+    final += word.charAt(0);
+  });
+  return final.slice(0, 2);
+};

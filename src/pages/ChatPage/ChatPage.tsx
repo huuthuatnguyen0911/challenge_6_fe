@@ -1,4 +1,4 @@
-import { Fragment, useContext, useEffect } from 'react'
+import { Fragment, useContext, useEffect, useRef, useState } from 'react'
 import { AppContext } from 'src/contexts/app.context'
 import SidebarChannels from 'src/components/ChatComponent/SidebarChannels/SidebarChannels'
 import default_user from '../../assets/default_user.png'
@@ -11,13 +11,20 @@ import authApi from 'src/apis/auth.api'
 import { toast } from 'react-toastify'
 import Helmet from 'src/components/Helmet/Helmet'
 import SidebarUsers from 'src/components/ChatComponent/SidebarUsers/SidebarUsers'
-import { io } from 'socket.io-client'
+import socket from 'src/utils/socket'
+import { useSockets } from 'src/contexts/socket.context'
+import { EVENTS } from 'src/config/events'
 
 function classNames(...classes: string[]) {
   return classes.filter(Boolean).join(' ')
 }
 
 export default function ChatPage() {
+  const { socket, messages, setMessages, roomId, currentRoom } = useSockets()
+  const newMessageRef = useRef(null)
+
+  const [value, setValue] = useState('')
+  // const [messages, setMessages] = useState<any[]>([])
   const { profile, setIsAuthenticated, setProfile } = useContext(AppContext)
   const logoutMutation = useMutation({
     mutationFn: () => authApi.logout(),
@@ -34,25 +41,66 @@ export default function ChatPage() {
     logoutMutation.mutate()
   }
 
-  // Test chat
-  useEffect(() => {
-    const socket = io(import.meta.env.VITE_API_URL as string)
-    socket.on('connect', () => {
-      console.log(socket.id, 'connected')
-      socket.emit('join', 'Xin chào thuật bên server')
-    })
-    socket.on('disconnect', () => {
-      console.log(socket.id, 'disconnected')
-    })
-    socket.on('hello', (msg) => {
-      console.log(msg)
-    })
-    return () => {
-      socket.disconnect()
-    }
-  }, [])
-
   const showChannelsList = true
+
+  //  Test chat
+  // useEffect(() => {
+  //   socket.auth = {
+  //     _id: profile?._id
+  //   }
+  //   socket.connect()
+
+  //   socket.on('connectToRoom', function (data) {
+  //     console.log(data)
+  //   })
+
+  //   socket.on('receive-message', (data) => {
+  //     const content = data.content
+  //     setMessages((messages) => [...messages, content])
+  //   })
+  //   return () => {
+  //     socket.disconnect()
+  //   }
+  // }, [])
+
+  // const handleSubmit = (e: any) => {
+  //   e.preventDefault()
+  //   console.log(value)
+  //   setValue('')
+  //   socket.emit('send-message', { content: value, to: '65b0bdac9e1a0a61c3eba05d' })
+  //   setMessages((messages) => [
+  //     ...messages,
+  //     {
+  //       content: value,
+  //       isSender: true
+  //     }
+  //   ])
+  // }
+  const { name: username, avatar } = profile || {}
+  const handleSendMessage = () => {
+    const message = (newMessageRef.current as any).value
+    if (!String(message).trim()) {
+      return
+    }
+
+    socket.emit(EVENTS.CLIENT.SEND_ROOM_MESSAGE, { message, roomId, username, avatar })
+
+    const currentDate = new Date()
+
+    setMessages([
+      ...messages,
+      { message, username: 'You', avatar, time: `${currentDate.getHours()}h:${currentDate.getMinutes()}p` }
+    ])
+
+    setValue('')
+  }
+
+  const date = new Date().toLocaleString('en-US', {
+    month: 'long',
+    day: 'numeric',
+    year: 'numeric'
+  })
+
   return (
     <div className='h-screen w-full flex'>
       <Helmet children='Chat group' />
@@ -152,63 +200,73 @@ export default function ChatPage() {
                 <path d='M3 18h18v-2H3v2zm0-5h18v-2H3v2zm0-7v2h18V6H3z' />
               </svg>
             </div>
-            <h2 className='font-bold text-white uppercase'>Abc</h2>
+            <h2 className='font-bold text-white uppercase'>{currentRoom ? currentRoom : 'WELCOME CHAT'}</h2>
           </div>
         </header>
 
         {/* Hiển thị tin nhắn ở đây */}
         <div className='container mx-auto px-4 lg:px-10 h-auto flex-auto overflow-y-auto'>
-          {/* <div className="h-full"> */}
-          {/* {state.messages.length > 0 && (
-          <>
-            {state.messages.map((block) => {
-              return (
-                <ul key={block._id.date} className="h-auto">
-                  <h3
-                    style={{
-                      lineHeight: '0.1em',
-                      margin: '10px 0 20px',
-                      borderColor: '#ffffff1f',
-                    }}
-                    className="w-full border-b text-center border-opacity-25"
+          <div className='h-full'>
+            {messages.map(({ message, username, avatar, time }, index) => (
+              <ul key={index} className='h-auto'>
+                <h3
+                  style={{
+                    lineHeight: '0.1em',
+                    margin: '10px 0 20px',
+                    borderColor: '#ffffff1f'
+                  }}
+                  className='w-full border-b text-center border-opacity-25'
+                >
+                  <span
+                    style={{ padding: '0 10px' }}
+                    className='bg-chatBg
+                '
                   >
-                    <span
-                      style={{ padding: '0 10px' }}
-                      className="bg-chatBg
-                    "
-                    >
-                      {formattedDate(block._id.date)}
-                    </span>
-                  </h3>
-                  {block.messages.map((m) => (
-                    <Message key={m._id} message={m} />
-                  ))}
-                </ul>
-              )
-            })}
+                    {date}
+                  </span>
+                </h3>
+                <div className={`flex mb-6 `}>
+                  <img className='w-10 h-10 rounded' src={avatar || default_user} />
+                  <div className='ml-6'>
+                    <div className='text-mGray font-bold mb-2'>
+                      {/* {message.isSender ? 'You' : 'Khách Thuật'}{' '} */}
+                      {username}
+                      <span className='font-normal text-xs ml-6'>{time}</span>
+                    </div>
+                    <div className='text-mWhite font-normal text-sm break-all'>
+                      {/* {message.isSender ? message.content : message} */}
+                      {message}
+                    </div>
+                  </div>
+                </div>
+              </ul>
+            ))}
 
-            <div ref={messagesContainerRef}></div>
-          </>
-        )} */}
-          {/* </div> */}
+            {/* <div ref={messagesContainerRef}></div> */}
+          </div>
         </div>
 
         {/* Input nhập tin nhắn chat */}
         <div className='container mx-auto px-4 lg:px-10 mb-6 mt-4'>
+          {/* <form onSubmit={handleSubmit}> */}
           <div className='flex items-center bg-mGray3 rounded h-12 p-2'>
             <input
               style={{ minWidth: 0 }}
               className='bg-transparent text-mBlue text-sm font-bold h-full w-full px-2 mr-4'
               type='text'
+              onChange={(e) => setValue(e.target.value)}
+              value={value}
               placeholder='Type a message here...'
+              ref={newMessageRef}
             />
-            <button className='flex items-center justify-center bg-mBlue px-2 py-2 rounded'>
+            <button onClick={handleSendMessage} className='flex items-center justify-center bg-mBlue px-2 py-2 rounded'>
               <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' width='18px' height='18px'>
                 <path d='M0 0h24v24H0z' fill='none' />
                 <path d='M2.01 21L23 12 2.01 3 2 10l15 2-15 2z' />
               </svg>
             </button>
           </div>
+          {/* </form> */}
         </div>
       </div>
     </div>

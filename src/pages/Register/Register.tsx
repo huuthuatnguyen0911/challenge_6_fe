@@ -50,7 +50,7 @@ export default function Register() {
       onSuccess: (data) => {
         setIsAuthenticated(true)
         setProfile(data.data.data.user)
-        toast.success(data.data.message, { autoClose: 3000 })
+        toast.success(data.data.message, { autoClose: 1000 })
         navigate('/')
       },
       onError: (error) => {

@@ -73,6 +73,13 @@ export const userSchema = yup.object({
   avatar: yup.string().max(1000, 'Avatar có độ dài tối đa 1000 ký tự')
 })
 
+export const conversationSchema = yup.object({
+  channel_name: yup.string().required('Tên là bắt buộc').min(1, 'Tên tối thiểu chứa 1 kí tự').max(160, 'Tên có độ dài từ 160 ký tự'),
+  description: yup.string().min(1, 'Mô tả tối thiểu chứa 1 kí tự').max(160, 'Mô tả có độ dài 150 ký tự').required('Mô tả là bắt buộc'),
+})
+
+export type ConversationSchema = yup.InferType<typeof conversationSchema>
+
 export type UserSchema = yup.InferType<typeof userSchema>
 
 export type Schema = yup.InferType<typeof schema>

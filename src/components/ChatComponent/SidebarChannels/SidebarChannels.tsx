@@ -1,11 +1,80 @@
 import { Dialog } from '@headlessui/react'
 import search from '../../../assets/search.svg'
-import { useState } from 'react'
+import { useRef, useState } from 'react'
 import Input from '../../Input/Input'
 import Button from '../../Button/Button'
+import { useSockets } from 'src/contexts/socket.context'
+import { EVENTS } from 'src/config/events'
+import { transformName } from 'src/utils/utils'
+import { useForm } from 'react-hook-form'
+import { yupResolver } from '@hookform/resolvers/yup'
+import { ConversationSchema, conversationSchema } from 'src/utils/rule'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import conversationApi from 'src/apis/conversation.api'
+
+type FormData = ConversationSchema
 
 export default function SidebarChannels() {
   let [isOpen, setIsOpen] = useState(false)
+  const { socket, roomId, rooms, setCurrentRoom, setRooms } = useSockets()
+  const newRoomRef = useRef<HTMLInputElement>(null)
+
+  const { data: allRooms } = useQuery({
+    queryKey: ['rooms'],
+    queryFn: () => conversationApi.getAllChannel()
+  })
+
+  console.log(socket)
+
+  console.log('rooms', rooms['O5nFTrgXdZHQqk8QCM0ek'].name)
+  // const allRoomsData = allRooms?.data.data
+  // Object.keys(allRoomsData).map((key) => {
+  //   return (rooms[key] = allRoomsData[key])
+  // })
+
+  const {
+    register,
+    handleSubmit,
+    setError,
+    formState: { errors }
+  } = useForm<FormData>({
+    resolver: yupResolver(conversationSchema)
+  })
+
+  const createChannelMutation = useMutation({
+    mutationFn: (body: FormData) => conversationApi.createChannel(body)
+  })
+
+  const onSubmit = handleSubmit((data) => {
+    createChannelMutation.mutate(data, {
+      onSuccess: (data) => {
+        setIsOpen(false)
+        socket.emit(EVENTS.CLIENT.CREATE_ROOM, { roomName: data.data.data.channel_name })
+      }
+    })
+  })
+
+  const handleSubmitt = () => {
+    const roomName = newRoomRef.current ? newRoomRef.current.value : ''
+
+    if (!String(roomName).trim()) {
+      return
+    }
+
+    socket.emit(EVENTS.CLIENT.CREATE_ROOM, { roomName })
+
+    if (newRoomRef.current) {
+      newRoomRef.current.value = ''
+    }
+  }
+
+  function handleJoinRoom(key: string) {
+    if (key === roomId) return
+    socket.emit(EVENTS.CLIENT.JOIN_ROOM, key)
+
+    setCurrentRoom(rooms[key].name)
+  }
+
   return (
     <>
       <header className='h-16 flex flex-none items-center shadow-lg w-full mb-2 px-4'>
@@ -43,47 +112,65 @@ export default function SidebarChannels() {
         <div className='h-auto'>
           {/* <h3 className="font-bold text-xl uppercase my-8">Members</h3> */}
           <ul>
-            <li className='group p-2 flex items-center mb-8 cursor-pointer rounded hover:bg-chatBg transition-colors duration-300'>
-              <span className='flex items-center justify-center uppercase h-8 min-w-8 rounded bg-mBlue text-white font-bold mr-4 '>
-                abc
-              </span>
-              <span className='uppercase font-bold text-white transition-colors duration-300'>ABC 123</span>
-            </li>
+            {Object.keys(rooms).map((key) => {
+              return (
+                <li
+                  key={key}
+                  onClick={() => handleJoinRoom(key)}
+                  className='group p-2 flex items-center mb-8 cursor-pointer rounded hover:bg-chatBg transition-colors duration-300'
+                >
+                  <span className='flex items-center justify-center uppercase h-8 min-w-8 rounded bg-mBlue text-white font-bold mr-4 '>
+                    {/* {transformName(rooms[key].name)} */}
+                    {rooms[key].name}
+                  </span>
+                  <span className='uppercase font-bold text-white transition-colors duration-300'>
+                    {rooms[key].name}
+                  </span>
+                </li>
+              )
+            })}
           </ul>
         </div>
       </div>
       <Dialog open={isOpen} onClose={() => setIsOpen(false)} className='relative z-50'>
-        {/* The backdrop, rendered as a fixed sibling to the panel container */}
         <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
 
-        {/* Full-screen container to center the panel */}
         <div className='fixed inset-0 flex w-screen items-center justify-center p-4'>
-          {/* The actual dialog panel  */}
           <Dialog.Panel className='mx-auto max-w-screen-md rounded bg-[#120F13]'>
             <Dialog.Title>
               <div className='flex-auto'>
                 <div className='rounded-lg sm:shadow-sm mx-auto mb-3 py-2 sm:pt-[34px] sm:pb-[22px]'>
                   <div className='pt-0 sm:px-[34px] container'>
-                    <form className='space-y-2' noValidate>
+                    <form className='space-y-2' noValidate onSubmit={onSubmit}>
                       <p className='uppercase text-[#F2F2F2] font-bold text-[18px] mb-6'>New channel</p>
                       <div className='relative'>
                         <input
                           className='w-[512px] py-3 px-4 rounded-lg text-white bg-mGray3 mb-6'
                           type='text'
                           placeholder='Channel name'
-                          name='channel'
+                          {...register('channel_name')}
+                          name='channel_name'
+                          // ref={newRoomRef}
                         />
+                        <p className='text-sm mt-2 font-medium text-destructive text-red-600'>
+                          {errors.channel_name?.message}
+                        </p>
                       </div>
                       <div className='relative'>
                         <textarea
                           className='w-[512px] py-3 px-4 rounded-lg text-white bg-mGray3 mb-4'
                           placeholder='Channel Description'
-                          name='channelDescription'
                           rows={3}
+                          {...register('description')}
+                          name='description'
                         />
+                        <p className='text-sm mt-2 font-medium text-destructive text-red-600'>
+                          {errors.description?.message}
+                        </p>
                       </div>
                       <Button
                         type='submit'
+                        // onClick={handleSubmitt}
                         className='bg-blue-600 px-[30px] py-[7px] text-white rounded-md flex items-start justify-items-end ml-auto'
                       >
                         Save

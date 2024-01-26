@@ -22,7 +22,7 @@ export default function Header() {
     onSuccess: () => {
       setIsAuthenticated(false)
       setProfile(null)
-      toast.success('Logout successfully', { autoClose: 3000 })
+      toast.success('Logout successfully', { autoClose: 1000 })
     },
     onError: (err) => {
       console.log(err)
