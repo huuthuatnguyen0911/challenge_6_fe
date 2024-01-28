@@ -7,12 +7,14 @@ interface SocketContextProps {
   setUsername: Function
   socket: Socket
   roomId?: string
+  currentroomId?: string
   rooms: any
   messages: { message: string; username: string; time: string; avatar: string }[]
   setMessages: Function
   setAvatar: Function
   currentRoom: string
   setCurrentRoom: Function
+  setCurrentRoomId: Function
   setRooms: Function
 }
 
@@ -27,6 +29,7 @@ const SocketContext = createContext<SocketContextProps>({
   setAvatar: () => {},
   currentRoom: '',
   setCurrentRoom: () => {},
+  setCurrentRoomId: () => {},
   setRooms: () => {}
 })
 
@@ -37,6 +40,7 @@ function SocketProvider(props: any) {
   const [rooms, setRooms] = useState({})
   const [messages, setMessages] = useState<any>([])
   const [currentRoom, setCurrentRoom] = useState('')
+  const [currentroomId, setCurrentRoomId] = useState('')
 
   socket.on(EVENTS.SERVER.ROOMS, (value) => {
     setRooms(value)
@@ -48,7 +52,12 @@ function SocketProvider(props: any) {
     setMessages([])
   })
 
-  socket.on(EVENTS.SERVER.ROOM_MESSAGE, ({ message, username, time, avatar }) => {
+  socket.on(EVENTS.SERVER.ROOM_MESSAGE, ({ roomId, message, username, time, avatar }) => {
+    console.log(message, username, time, avatar)
+    // check nếu room đang mở là room hiện tại thì mới set message
+    console.log('currentroomId', currentroomId)
+    console.log('roomId', roomId)
+    if (currentroomId !== roomId) return
     setMessages([
       ...messages,
       {
@@ -74,6 +83,8 @@ function SocketProvider(props: any) {
         setAvatar,
         currentRoom,
         setCurrentRoom,
+        setCurrentRoomId,
+        currentroomId,
         setRooms
       }}
       {...props}

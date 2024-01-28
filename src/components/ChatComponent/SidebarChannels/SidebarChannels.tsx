@@ -1,32 +1,33 @@
 import { Dialog } from '@headlessui/react'
-import search from '../../../assets/search.svg'
-import { useRef, useState } from 'react'
-import Input from '../../Input/Input'
-import Button from '../../Button/Button'
-import { useSockets } from 'src/contexts/socket.context'
-import { EVENTS } from 'src/config/events'
-import { transformName } from 'src/utils/utils'
-import { useForm } from 'react-hook-form'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { ConversationSchema, conversationSchema } from 'src/utils/rule'
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { useContext, useEffect, useRef, useState } from 'react'
+import { useForm } from 'react-hook-form'
 import conversationApi from 'src/apis/conversation.api'
+import { EVENTS } from 'src/config/events'
+import { AppContext } from 'src/contexts/app.context'
+import { useSockets } from 'src/contexts/socket.context'
+import { ConversationSchema, conversationSchema } from 'src/utils/rule'
+import search from '../../../assets/search.svg'
+import Button from '../../Button/Button'
+import { set } from 'lodash'
+import { transformName } from 'src/utils/utils'
 
 type FormData = ConversationSchema
 
 export default function SidebarChannels() {
+  const { profile } = useContext(AppContext)
   let [isOpen, setIsOpen] = useState(false)
-  const { socket, roomId, rooms, setCurrentRoom, setRooms } = useSockets()
+  const { socket, roomId, rooms, setCurrentRoom, setRooms, setCurrentRoomId, setMessages } = useSockets()
   const newRoomRef = useRef<HTMLInputElement>(null)
+  const [roomsData, setRoomsData] = useState<any[]>([])
 
   const { data: allRooms } = useQuery({
     queryKey: ['rooms'],
     queryFn: () => conversationApi.getAllChannel()
   })
 
-  console.log(socket)
-
-  console.log('rooms', rooms['O5nFTrgXdZHQqk8QCM0ek'].name)
+  // console.log('rooms', rooms['O5nFTrgXdZHQqk8QCM0ek'].name)
   // const allRoomsData = allRooms?.data.data
   // Object.keys(allRoomsData).map((key) => {
   //   return (rooms[key] = allRoomsData[key])
@@ -41,39 +42,40 @@ export default function SidebarChannels() {
     resolver: yupResolver(conversationSchema)
   })
 
-  const createChannelMutation = useMutation({
+  const { mutate: createChannelMutation } = useMutation({
     mutationFn: (body: FormData) => conversationApi.createChannel(body)
   })
 
-  const onSubmit = handleSubmit((data) => {
-    createChannelMutation.mutate(data, {
-      onSuccess: (data) => {
-        setIsOpen(false)
-        socket.emit(EVENTS.CLIENT.CREATE_ROOM, { roomName: data.data.data.channel_name })
+  const { mutate: getAllRooms } = useMutation({
+    mutationFn: () => conversationApi.getAllChannel(),
+    onSuccess: (rs) => {
+      console.log(rs)
+      if (rs && rs.data) {
+        setRoomsData(rs.data.data ?? [])
       }
-    })
+    }
+  })
+  const onSubmit = handleSubmit((data) => {
+    // createChannelMutation(data, {
+    //   onSuccess: (data) => {
+    setIsOpen(false)
+    socket.emit(EVENTS.CLIENT.CREATE_ROOM, { ...data, userId: profile?._id })
+    getAllRooms()
+    //   }
+    // })
   })
 
-  const handleSubmitt = () => {
-    const roomName = newRoomRef.current ? newRoomRef.current.value : ''
-
-    if (!String(roomName).trim()) {
-      return
-    }
-
-    socket.emit(EVENTS.CLIENT.CREATE_ROOM, { roomName })
-
-    if (newRoomRef.current) {
-      newRoomRef.current.value = ''
-    }
+  function handleJoinRoom(room: any) {
+    if (room.roomId === roomId) return
+    socket.emit(EVENTS.CLIENT.JOIN_ROOM, room.roomId)
+    setCurrentRoomId(room.roomId)
+    setCurrentRoom(room.channel_name)
+    setMessages([])
   }
 
-  function handleJoinRoom(key: string) {
-    if (key === roomId) return
-    socket.emit(EVENTS.CLIENT.JOIN_ROOM, key)
-
-    setCurrentRoom(rooms[key].name)
-  }
+  useEffect(() => {
+    getAllRooms()
+  }, [])
 
   return (
     <>
@@ -112,23 +114,40 @@ export default function SidebarChannels() {
         <div className='h-auto'>
           {/* <h3 className="font-bold text-xl uppercase my-8">Members</h3> */}
           <ul>
-            {Object.keys(rooms).map((key) => {
-              return (
+            {
+              roomsData.map((room, index) => (
                 <li
-                  key={key}
-                  onClick={() => handleJoinRoom(key)}
+                  key={index}
+                  onClick={() => handleJoinRoom(room)}
                   className='group p-2 flex items-center mb-8 cursor-pointer rounded hover:bg-chatBg transition-colors duration-300'
                 >
                   <span className='flex items-center justify-center uppercase h-8 min-w-8 rounded bg-mBlue text-white font-bold mr-4 '>
-                    {/* {transformName(rooms[key].name)} */}
-                    {rooms[key].name}
+                    {transformName(room.channel_name)}
+                    {/* {room.channel_name} */}
                   </span>
                   <span className='uppercase font-bold text-white transition-colors duration-300'>
-                    {rooms[key].name}
+                    {room.channel_name}
                   </span>
                 </li>
-              )
-            })}
+              ))
+              // Object.keys(rooms).map((key) => {
+              //   return (
+              //     <li
+              //       key={key}
+              //       onClick={() => handleJoinRoom(key)}
+              //       className='group p-2 flex items-center mb-8 cursor-pointer rounded hover:bg-chatBg transition-colors duration-300'
+              //     >
+              //       <span className='flex items-center justify-center uppercase h-8 min-w-8 rounded bg-mBlue text-white font-bold mr-4 '>
+              //         {/* {transformName(rooms[key].name)} */}
+              //         {rooms[key].name}
+              //       </span>
+              //       <span className='uppercase font-bold text-white transition-colors duration-300'>
+              //         {rooms[key].name}
+              //       </span>
+              //     </li>
+              //   )
+              // })
+            }
           </ul>
         </div>
       </div>

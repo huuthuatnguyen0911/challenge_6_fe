@@ -11,7 +11,6 @@ import authApi from 'src/apis/auth.api'
 import { toast } from 'react-toastify'
 import Helmet from 'src/components/Helmet/Helmet'
 import SidebarUsers from 'src/components/ChatComponent/SidebarUsers/SidebarUsers'
-import socket from 'src/utils/socket'
 import { useSockets } from 'src/contexts/socket.context'
 import { EVENTS } from 'src/config/events'
 
@@ -20,11 +19,10 @@ function classNames(...classes: string[]) {
 }
 
 export default function ChatPage() {
-  const { socket, messages, setMessages, roomId, currentRoom } = useSockets()
+  const { socket, messages, setMessages, currentRoom, currentroomId } = useSockets()
   const newMessageRef = useRef(null)
 
   const [value, setValue] = useState('')
-  // const [messages, setMessages] = useState<any[]>([])
   const { profile, setIsAuthenticated, setProfile } = useContext(AppContext)
   const logoutMutation = useMutation({
     mutationFn: () => authApi.logout(),
@@ -43,53 +41,29 @@ export default function ChatPage() {
 
   const showChannelsList = true
 
-  //  Test chat
-  // useEffect(() => {
-  //   socket.auth = {
-  //     _id: profile?._id
-  //   }
-  //   socket.connect()
-
-  //   socket.on('connectToRoom', function (data) {
-  //     console.log(data)
-  //   })
-
-  //   socket.on('receive-message', (data) => {
-  //     const content = data.content
-  //     setMessages((messages) => [...messages, content])
-  //   })
-  //   return () => {
-  //     socket.disconnect()
-  //   }
-  // }, [])
-
-  // const handleSubmit = (e: any) => {
-  //   e.preventDefault()
-  //   console.log(value)
-  //   setValue('')
-  //   socket.emit('send-message', { content: value, to: '65b0bdac9e1a0a61c3eba05d' })
-  //   setMessages((messages) => [
-  //     ...messages,
-  //     {
-  //       content: value,
-  //       isSender: true
-  //     }
-  //   ])
-  // }
   const { name: username, avatar } = profile || {}
-  const handleSendMessage = () => {
+  const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault()
     const message = (newMessageRef.current as any).value
     if (!String(message).trim()) {
       return
     }
 
-    socket.emit(EVENTS.CLIENT.SEND_ROOM_MESSAGE, { message, roomId, username, avatar })
+    if (!currentroomId) return
+
+    socket.emit(EVENTS.CLIENT.SEND_ROOM_MESSAGE, { message, roomId: currentroomId, username, avatar })
 
     const currentDate = new Date()
 
     setMessages([
       ...messages,
-      { message, username: 'You', avatar, time: `${currentDate.getHours()}h:${currentDate.getMinutes()}p` }
+      {
+        currentroomId,
+        message,
+        username: 'You',
+        avatar,
+        time: `${currentDate.getHours()}h:${currentDate.getMinutes()}p`
+      }
     ])
 
     setValue('')
@@ -100,7 +74,7 @@ export default function ChatPage() {
     day: 'numeric',
     year: 'numeric'
   })
-
+  console.log(currentRoom)
   return (
     <div className='h-screen w-full flex'>
       <Helmet children='Chat group' />
@@ -203,71 +177,74 @@ export default function ChatPage() {
             <h2 className='font-bold text-white uppercase'>{currentRoom ? currentRoom : 'WELCOME CHAT'}</h2>
           </div>
         </header>
-
-        {/* Hiển thị tin nhắn ở đây */}
-        <div className='container mx-auto px-4 lg:px-10 h-auto flex-auto overflow-y-auto'>
-          <div className='h-full'>
-            {messages.map(({ message, username, avatar, time }, index) => (
-              <ul key={index} className='h-auto'>
-                <h3
-                  style={{
-                    lineHeight: '0.1em',
-                    margin: '10px 0 20px',
-                    borderColor: '#ffffff1f'
-                  }}
-                  className='w-full border-b text-center border-opacity-25'
-                >
-                  <span
-                    style={{ padding: '0 10px' }}
-                    className='bg-chatBg
+        {currentRoom && (
+          <>
+            {/* Hiển thị tin nhắn ở đây */}
+            <div className='container mx-auto px-4 lg:px-10 h-auto flex-auto overflow-y-auto'>
+              <div className='h-full'>
+                {messages.map(({ message, username, avatar, time }, index) => (
+                  <ul key={index} className='h-auto'>
+                    <h3
+                      style={{
+                        lineHeight: '0.1em',
+                        margin: '10px 0 20px',
+                        borderColor: '#ffffff1f'
+                      }}
+                      className='w-full border-b text-center border-opacity-25'
+                    >
+                      <span
+                        style={{ padding: '0 10px' }}
+                        className='bg-chatBg
                 '
-                  >
-                    {date}
-                  </span>
-                </h3>
-                <div className={`flex mb-6 `}>
-                  <img className='w-10 h-10 rounded' src={avatar || default_user} />
-                  <div className='ml-6'>
-                    <div className='text-mGray font-bold mb-2'>
-                      {/* {message.isSender ? 'You' : 'Khách Thuật'}{' '} */}
-                      {username}
-                      <span className='font-normal text-xs ml-6'>{time}</span>
+                      >
+                        {date}
+                      </span>
+                    </h3>
+                    <div className={`flex mb-6 `}>
+                      <img className='w-10 h-10 rounded' src={avatar || default_user} />
+                      <div className='ml-6'>
+                        <div className='text-mGray font-bold mb-2'>
+                          {/* {message.isSender ? 'You' : 'Khách Thuật'}{' '} */}
+                          {username}
+                          <span className='font-normal text-xs ml-6'>{time}</span>
+                        </div>
+                        <div className='text-mWhite font-normal text-sm break-all'>
+                          {/* {message.isSender ? message.content : message} */}
+                          {message}
+                        </div>
+                      </div>
                     </div>
-                    <div className='text-mWhite font-normal text-sm break-all'>
-                      {/* {message.isSender ? message.content : message} */}
-                      {message}
-                    </div>
-                  </div>
+                  </ul>
+                ))}
+
+                {/* <div ref={messagesContainerRef}></div> */}
+              </div>
+            </div>
+
+            {/* Input nhập tin nhắn chat */}
+            <div className='container mx-auto px-4 lg:px-10 mb-6 mt-4'>
+              <form onSubmit={handleSendMessage}>
+                <div className='flex items-center bg-mGray3 rounded h-12 p-2'>
+                  <input
+                    style={{ minWidth: 0 }}
+                    className='bg-transparent text-mBlue text-sm font-bold h-full w-full px-2 mr-4'
+                    type='text'
+                    onChange={(e) => setValue(e.target.value)}
+                    value={value}
+                    placeholder='Type a message here...'
+                    ref={newMessageRef}
+                  />
+                  <button type='submit' className='flex items-center justify-center bg-mBlue px-2 py-2 rounded'>
+                    <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' width='18px' height='18px'>
+                      <path d='M0 0h24v24H0z' fill='none' />
+                      <path d='M2.01 21L23 12 2.01 3 2 10l15 2-15 2z' />
+                    </svg>
+                  </button>
                 </div>
-              </ul>
-            ))}
-
-            {/* <div ref={messagesContainerRef}></div> */}
-          </div>
-        </div>
-
-        {/* Input nhập tin nhắn chat */}
-        <div className='container mx-auto px-4 lg:px-10 mb-6 mt-4'>
-          {/* <form onSubmit={handleSubmit}> */}
-          <div className='flex items-center bg-mGray3 rounded h-12 p-2'>
-            <input
-              style={{ minWidth: 0 }}
-              className='bg-transparent text-mBlue text-sm font-bold h-full w-full px-2 mr-4'
-              type='text'
-              onChange={(e) => setValue(e.target.value)}
-              value={value}
-              placeholder='Type a message here...'
-              ref={newMessageRef}
-            />
-            <button onClick={handleSendMessage} className='flex items-center justify-center bg-mBlue px-2 py-2 rounded'>
-              <svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='white' width='18px' height='18px'>
-                <path d='M0 0h24v24H0z' fill='none' />
-                <path d='M2.01 21L23 12 2.01 3 2 10l15 2-15 2z' />
-              </svg>
-            </button>
-          </div>
-          {/* </form> */}
-        </div>
+              </form>
+            </div>
+          </>
+        )}
       </div>
     </div>
   )
