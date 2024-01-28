@@ -16,9 +16,11 @@ interface SocketContextProps {
   setCurrentRoom: Function
   setCurrentRoomId: Function
   setRooms: Function
+  showChannelList: boolean
+  setShowChannelList: Function
 }
 
-const socket = io(import.meta.env.VITE_API_URL as string)
+const socket = io(import.meta.env.VITE_API_URL_SOCKET as string)
 
 const SocketContext = createContext<SocketContextProps>({
   socket,
@@ -30,7 +32,9 @@ const SocketContext = createContext<SocketContextProps>({
   currentRoom: '',
   setCurrentRoom: () => {},
   setCurrentRoomId: () => {},
-  setRooms: () => {}
+  setRooms: () => {},
+  showChannelList: false,
+  setShowChannelList: () => {}
 })
 
 function SocketProvider(props: any) {
@@ -41,6 +45,7 @@ function SocketProvider(props: any) {
   const [messages, setMessages] = useState<any>([])
   const [currentRoom, setCurrentRoom] = useState('')
   const [currentroomId, setCurrentRoomId] = useState('')
+  const [showChannelList, setShowChannelList] = useState(false)
 
   socket.on(EVENTS.SERVER.ROOMS, (value) => {
     setRooms(value)
@@ -48,25 +53,22 @@ function SocketProvider(props: any) {
 
   socket.on(EVENTS.SERVER.JOINED_ROOM, (value) => {
     setRoomId(value)
-
     setMessages([])
   })
 
   socket.on(EVENTS.SERVER.ROOM_MESSAGE, ({ roomId, message, username, time, avatar }) => {
-    console.log(message, username, time, avatar)
-    // check nếu room đang mở là room hiện tại thì mới set message
-    console.log('currentroomId', currentroomId)
-    console.log('roomId', roomId)
     if (currentroomId !== roomId) return
-    setMessages([
-      ...messages,
-      {
-        message,
-        username,
-        time,
-        avatar
-      }
-    ])
+    if (currentroomId === roomId) {
+      setMessages([
+        ...messages,
+        {
+          message,
+          username,
+          time,
+          avatar
+        }
+      ])
+    }
   })
 
   return (
@@ -85,7 +87,9 @@ function SocketProvider(props: any) {
         setCurrentRoom,
         setCurrentRoomId,
         currentroomId,
-        setRooms
+        setRooms,
+        showChannelList,
+        setShowChannelList
       }}
       {...props}
     />

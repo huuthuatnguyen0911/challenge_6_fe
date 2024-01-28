@@ -10,6 +10,9 @@ const userApi = {
   getProfile() {
     return http.get<SuccessResponse<User>>('users/me')
   },
+  getProfileById(id: string) {
+    return http.get<SuccessResponse<User>>(`users/search/${id}`)
+  },
   updateProfile(body: BodyUpdateProfile) {
     return http.patch<SuccessResponse<User>>('users/me', body)
   },

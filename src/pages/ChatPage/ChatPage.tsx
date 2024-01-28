@@ -1,4 +1,4 @@
-import { Fragment, useContext, useEffect, useRef, useState } from 'react'
+import { Fragment, useContext, useRef, useState } from 'react'
 import { AppContext } from 'src/contexts/app.context'
 import SidebarChannels from 'src/components/ChatComponent/SidebarChannels/SidebarChannels'
 import default_user from '../../assets/default_user.png'
@@ -19,9 +19,8 @@ function classNames(...classes: string[]) {
 }
 
 export default function ChatPage() {
-  const { socket, messages, setMessages, currentRoom, currentroomId } = useSockets()
+  const { socket, messages, setMessages, currentRoom, currentroomId, roomId, showChannelList } = useSockets()
   const newMessageRef = useRef(null)
-
   const [value, setValue] = useState('')
   const { profile, setIsAuthenticated, setProfile } = useContext(AppContext)
   const logoutMutation = useMutation({
@@ -39,9 +38,8 @@ export default function ChatPage() {
     logoutMutation.mutate()
   }
 
-  const showChannelsList = true
-
   const { name: username, avatar } = profile || {}
+
   const handleSendMessage = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     const message = (newMessageRef.current as any).value
@@ -50,22 +48,24 @@ export default function ChatPage() {
     }
 
     if (!currentroomId) return
+    console.log('currentroomId', currentroomId)
+    console.log('roomId', roomId)
+    // console.log('message', message)
+    if (currentroomId === roomId) {
+      socket.emit(EVENTS.CLIENT.SEND_ROOM_MESSAGE, { message, roomId: currentroomId, username, avatar })
+      const currentDate = new Date()
 
-    socket.emit(EVENTS.CLIENT.SEND_ROOM_MESSAGE, { message, roomId: currentroomId, username, avatar })
-
-    const currentDate = new Date()
-
-    setMessages([
-      ...messages,
-      {
-        currentroomId,
-        message,
-        username: 'You',
-        avatar,
-        time: `${currentDate.getHours()}h:${currentDate.getMinutes()}p`
-      }
-    ])
-
+      setMessages([
+        ...messages,
+        {
+          currentroomId,
+          message,
+          username: 'You',
+          avatar,
+          time: `${currentDate.getHours()}h:${currentDate.getMinutes()}p`
+        }
+      ])
+    }
     setValue('')
   }
 
@@ -87,8 +87,8 @@ export default function ChatPage() {
           X
         </div>
         <div className='flex flex-col w-mSidebar h-full overflow-hidden bg-darkBg'>
-          {showChannelsList && <SidebarChannels></SidebarChannels>}
-          {!showChannelsList && <SidebarUsers></SidebarUsers>}
+          {!showChannelList && <SidebarChannels></SidebarChannels>}
+          {showChannelList && <SidebarUsers></SidebarUsers>}
 
           {/* Footer hiển thị người dùng hiện tại */}
           <div

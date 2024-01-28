@@ -1,19 +1,39 @@
-import React from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { useContext, useEffect, useState } from 'react'
+import userApi from 'src/apis/user.api'
+import { AppContext } from 'src/contexts/app.context'
+import { User } from 'src/types/user.type'
+import default_user from '../../../assets/default_user.png'
 
 export default function ConnectedUsers() {
+  const { channel } = useContext(AppContext)
+  const [members, setMembers] = useState<User[]>([])
+
+  const { mutate: getUserInChannel } = useMutation({
+    mutationFn: (id: string) => userApi.getProfileById(id),
+    onSuccess: (data) => {
+      if (data && data.data) {
+        setMembers((prevMembers) => [...prevMembers, data.data.data])
+      }
+    }
+  })
+
+  useEffect(() => {
+    channel?.members.map((member) => {
+      getUserInChannel(member)
+    })
+  }, [channel])
+
   return (
     <div className='h-auto'>
       <h3 className='font-bold text-xl uppercase my-8'>Members</h3>
       <ul>
-        {/* return ( */}
-        <li className='flex items-center mb-8'>
-          <img
-            className='w-10 h-10 rounded mr-6'
-            src='https://scontent.fdad1-4.fna.fbcdn.net/v/t1.6435-9/72290421_957259787941327_57652922267205632_n.jpg?stp=dst-jpg_p526x296&_nc_cat=105&ccb=1-7&_nc_sid=dd63ad&_nc_eui2=AeGTrZ_jR8gvHLekfd7TmEYMcV1nQWpTcq9xXWdBalNyr496M2s-e_BEl1b2aWZGFnAzxMYm9ueQCPY29XbWqQVa&_nc_ohc=tkecYxOfnA4AX992U0_&_nc_ht=scontent.fdad1-4.fna&oh=00_AfBJB649A3dtI5PSqxpY0uUYwboVZ8uy1W3oTrmULLMhag&oe=65D7542E'
-          />
-          hihi
-        </li>
-        {/* ) */}
+        {members.map((member, index) => (
+          <li key={index} className='flex items-center mb-8'>
+            <img className='w-10 h-10 rounded mr-6' src={member?.avatar || default_user} />
+            {member?.name}
+          </li>
+        ))}
       </ul>
     </div>
   )

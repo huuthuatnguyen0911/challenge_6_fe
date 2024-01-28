@@ -1,4 +1,5 @@
 import React, { createContext, useState } from 'react'
+import { Conversation } from 'src/types/conversation.type'
 import { User } from 'src/types/user.type'
 import { getAccessTokenFromLS, getProfileFromLS } from 'src/utils/auth'
 
@@ -8,6 +9,8 @@ interface AppContextInterface {
   profile: User | null
   setProfile: React.Dispatch<React.SetStateAction<User | null>>
   reset: () => void
+  channel: Conversation | null
+  setChannel: React.Dispatch<React.SetStateAction<Conversation | null>>
 }
 
 const initialAppContext: AppContextInterface = {
@@ -15,7 +18,9 @@ const initialAppContext: AppContextInterface = {
   setIsAuthenticated: () => null,
   profile: getProfileFromLS(),
   setProfile: () => null,
-  reset: () => null
+  reset: () => null,
+  channel: null,
+  setChannel: () => null
 }
 
 export const AppContext = createContext<AppContextInterface>(initialAppContext)
@@ -23,6 +28,7 @@ export const AppContext = createContext<AppContextInterface>(initialAppContext)
 export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   const [isAuthenticated, setIsAuthenticated] = useState<boolean>(initialAppContext.isAuthenticated)
   const [profile, setProfile] = useState<User | null>(initialAppContext.profile)
+  const [channel, setChannel] = useState<Conversation | null>(null)
 
   const reset = () => {
     setIsAuthenticated(false)
@@ -30,7 +36,9 @@ export const AppProvider = ({ children }: { children: React.ReactNode }) => {
   }
 
   return (
-    <AppContext.Provider value={{ isAuthenticated, setIsAuthenticated, profile, setProfile, reset }}>
+    <AppContext.Provider
+      value={{ isAuthenticated, setIsAuthenticated, profile, setProfile, reset, channel, setChannel }}
+    >
       {children}
     </AppContext.Provider>
   )

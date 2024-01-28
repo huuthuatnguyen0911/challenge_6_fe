@@ -1,7 +1,7 @@
 import { Dialog } from '@headlessui/react'
 import { yupResolver } from '@hookform/resolvers/yup'
-import { useMutation, useQuery } from '@tanstack/react-query'
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useMutation } from '@tanstack/react-query'
+import { useContext, useEffect, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import conversationApi from 'src/apis/conversation.api'
 import { EVENTS } from 'src/config/events'
@@ -10,28 +10,15 @@ import { useSockets } from 'src/contexts/socket.context'
 import { ConversationSchema, conversationSchema } from 'src/utils/rule'
 import search from '../../../assets/search.svg'
 import Button from '../../Button/Button'
-import { set } from 'lodash'
 import { transformName } from 'src/utils/utils'
 
 type FormData = ConversationSchema
 
 export default function SidebarChannels() {
-  const { profile } = useContext(AppContext)
+  const { profile, setChannel } = useContext(AppContext)
   let [isOpen, setIsOpen] = useState(false)
-  const { socket, roomId, rooms, setCurrentRoom, setRooms, setCurrentRoomId, setMessages } = useSockets()
-  const newRoomRef = useRef<HTMLInputElement>(null)
+  const { socket, roomId, setCurrentRoom, setCurrentRoomId, setMessages, setShowChannelList } = useSockets()
   const [roomsData, setRoomsData] = useState<any[]>([])
-
-  const { data: allRooms } = useQuery({
-    queryKey: ['rooms'],
-    queryFn: () => conversationApi.getAllChannel()
-  })
-
-  // console.log('rooms', rooms['O5nFTrgXdZHQqk8QCM0ek'].name)
-  // const allRoomsData = allRooms?.data.data
-  // Object.keys(allRoomsData).map((key) => {
-  //   return (rooms[key] = allRoomsData[key])
-  // })
 
   const {
     register,
@@ -40,10 +27,6 @@ export default function SidebarChannels() {
     formState: { errors }
   } = useForm<FormData>({
     resolver: yupResolver(conversationSchema)
-  })
-
-  const { mutate: createChannelMutation } = useMutation({
-    mutationFn: (body: FormData) => conversationApi.createChannel(body)
   })
 
   const { mutate: getAllRooms } = useMutation({
@@ -55,17 +38,26 @@ export default function SidebarChannels() {
       }
     }
   })
+
   const onSubmit = handleSubmit((data) => {
-    // createChannelMutation(data, {
-    //   onSuccess: (data) => {
     setIsOpen(false)
     socket.emit(EVENTS.CLIENT.CREATE_ROOM, { ...data, userId: profile?._id })
     getAllRooms()
-    //   }
-    // })
+  })
+
+  const { mutate: getChannelById } = useMutation({
+    mutationFn: (roomId: string) => conversationApi.getChannelById(roomId),
+    onSuccess: (data) => {
+      console.log('result', data)
+      if (data && data.data) {
+        setChannel(data.data.data ?? [])
+      }
+    }
   })
 
   function handleJoinRoom(room: any) {
+    getChannelById(room.roomId)
+    setShowChannelList(true)
     if (room.roomId === roomId) return
     socket.emit(EVENTS.CLIENT.JOIN_ROOM, room.roomId)
     setCurrentRoomId(room.roomId)
@@ -114,40 +106,20 @@ export default function SidebarChannels() {
         <div className='h-auto'>
           {/* <h3 className="font-bold text-xl uppercase my-8">Members</h3> */}
           <ul>
-            {
-              roomsData.map((room, index) => (
-                <li
-                  key={index}
-                  onClick={() => handleJoinRoom(room)}
-                  className='group p-2 flex items-center mb-8 cursor-pointer rounded hover:bg-chatBg transition-colors duration-300'
-                >
-                  <span className='flex items-center justify-center uppercase h-8 min-w-8 rounded bg-mBlue text-white font-bold mr-4 '>
-                    {transformName(room.channel_name)}
-                    {/* {room.channel_name} */}
-                  </span>
-                  <span className='uppercase font-bold text-white transition-colors duration-300'>
-                    {room.channel_name}
-                  </span>
-                </li>
-              ))
-              // Object.keys(rooms).map((key) => {
-              //   return (
-              //     <li
-              //       key={key}
-              //       onClick={() => handleJoinRoom(key)}
-              //       className='group p-2 flex items-center mb-8 cursor-pointer rounded hover:bg-chatBg transition-colors duration-300'
-              //     >
-              //       <span className='flex items-center justify-center uppercase h-8 min-w-8 rounded bg-mBlue text-white font-bold mr-4 '>
-              //         {/* {transformName(rooms[key].name)} */}
-              //         {rooms[key].name}
-              //       </span>
-              //       <span className='uppercase font-bold text-white transition-colors duration-300'>
-              //         {rooms[key].name}
-              //       </span>
-              //     </li>
-              //   )
-              // })
-            }
+            {roomsData.map((room, index) => (
+              <li
+                key={index}
+                onClick={() => handleJoinRoom(room)}
+                className='group p-2 flex items-center mb-8 cursor-pointer rounded hover:bg-chatBg transition-colors duration-300'
+              >
+                <span className='flex items-center justify-center uppercase h-8 min-w-8 rounded bg-mBlue text-white font-bold mr-4 '>
+                  {transformName(room.channel_name)}
+                </span>
+                <span className='uppercase font-bold text-white transition-colors duration-300'>
+                  {room.channel_name}
+                </span>
+              </li>
+            ))}
           </ul>
         </div>
       </div>
@@ -189,7 +161,6 @@ export default function SidebarChannels() {
                       </div>
                       <Button
                         type='submit'
-                        // onClick={handleSubmitt}
                         className='bg-blue-600 px-[30px] py-[7px] text-white rounded-md flex items-start justify-items-end ml-auto'
                       >
                         Save

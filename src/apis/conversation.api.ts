@@ -8,6 +8,9 @@ const conversationApi = {
   },
   getAllChannel() {
     return http.get<SuccessResponse<any>>('/conversation/get-all-group')
+  },
+  getChannelById(roomId: string) {
+    return http.get<SuccessResponse<any>>(`/conversation/get-group/${roomId}`)
   }
 }
 
