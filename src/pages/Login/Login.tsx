@@ -56,7 +56,6 @@ export default function Login() {
       onError: (error) => {
         if (isAxiosUnprocessableEntityError<ErrorResponse<ErrorRes>>(error)) {
           const formErrors = error.response?.data
-          console.log(formErrors)
           if (formErrors?.data?.email) {
             setError('email', { message: formErrors.data.email.msg, type: 'Server' })
           }
@@ -87,6 +86,7 @@ export default function Login() {
                   register={register}
                   name='email'
                   errorMessages={errors.email?.message}
+                  // className={errors.email?.message ? 'border-red-500' : ''}
                 />
               </div>
               <div className='relative'>
@@ -98,6 +98,7 @@ export default function Login() {
                   name='password'
                   register={register}
                   errorMessages={errors.password?.message}
+                  // className={errors.password?.message ? 'border-red-500' : ''}
                 />
               </div>
               <Button

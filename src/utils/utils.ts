@@ -1,5 +1,6 @@
 import axios, { AxiosError } from 'axios'
 import HttpStatusCode from 'src/constants/httpStatusCode.enum'
+import moment from 'moment'
 
 export function isAxiosError(error: unknown): error is AxiosError {
   // eslint-disable-next-line import/no-named-as-default-member
@@ -17,4 +18,20 @@ export const transformName = (name: string) => {
     final += word.charAt(0);
   });
   return final.slice(0, 2);
-};
+}
+
+export const formatDate = (date: Date) => {
+  const now = moment();
+  const targetDate = moment(date);
+
+  if (now.diff(targetDate, 'days') === 0) {
+    // Nếu là ngày hiện tại
+    return `today at ${targetDate.format('h:mm A')}`;
+  } else if (now.diff(targetDate, 'days') === 1) {
+    // Nếu là ngày hôm qua
+    return `yesterday at ${targetDate.format('h:mm A')}`;
+  } else {
+    // Nếu là một ngày khác
+    return targetDate.format('MMMM D [at] h:mm A');
+  }
+}

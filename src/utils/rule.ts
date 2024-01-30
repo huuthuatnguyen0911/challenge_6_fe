@@ -74,7 +74,7 @@ export const userSchema = yup.object({
 })
 
 export const conversationSchema = yup.object({
-  channel_name: yup.string().required('Tên là bắt buộc').min(1, 'Tên tối thiểu chứa 1 kí tự').max(160, 'Tên có độ dài từ 160 ký tự'),
+  channel_name: yup.string().required('Tên là bắt buộc').min(1, 'Tên tối thiểu chứa 1 kí tự').max(160, 'Tên có độ dài từ 160 ký tự').trim('Tên không được bắt đầu bằng khoảng trắng'),
   description: yup.string().min(1, 'Mô tả tối thiểu chứa 1 kí tự').max(160, 'Mô tả có độ dài 150 ký tự').required('Mô tả là bắt buộc'),
 })
 

@@ -116,7 +116,6 @@ export default function EditPage() {
     } catch (error) {
       if (isAxiosUnprocessableEntityError<ErrorResponse<ErrorRes>>(error)) {
         const formErrors = error.response?.data
-        console.log(formErrors)
         if (formErrors?.data?.phone) {
           setError('phone', { message: formErrors.data.phone.msg, type: 'Server' })
         }

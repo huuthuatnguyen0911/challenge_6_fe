@@ -23,7 +23,6 @@ export default function SidebarChannels() {
   const {
     register,
     handleSubmit,
-    setError,
     formState: { errors }
   } = useForm<FormData>({
     resolver: yupResolver(conversationSchema)
@@ -32,12 +31,15 @@ export default function SidebarChannels() {
   const { mutate: getAllRooms } = useMutation({
     mutationFn: () => conversationApi.getAllChannel(),
     onSuccess: (rs) => {
-      console.log(rs)
       if (rs && rs.data) {
         setRoomsData(rs.data.data ?? [])
       }
     }
   })
+
+  useEffect(() => {
+    getAllRooms()
+  }, [])
 
   const onSubmit = handleSubmit((data) => {
     setIsOpen(false)
@@ -48,7 +50,6 @@ export default function SidebarChannels() {
   const { mutate: getChannelById } = useMutation({
     mutationFn: (roomId: string) => conversationApi.getChannelById(roomId),
     onSuccess: (data) => {
-      console.log('result', data)
       if (data && data.data) {
         setChannel(data.data.data ?? [])
       }
@@ -65,9 +66,12 @@ export default function SidebarChannels() {
     setMessages([])
   }
 
-  useEffect(() => {
-    getAllRooms()
-  }, [])
+  const inputError = {
+    errors:
+      errors.channel_name?.message || errors.description?.message
+        ? 'w-[512px] py-3 px-4 rounded-lg text-white bg-mGray3 mb-4 border border-red-500'
+        : 'w-[512px] py-3 px-4 rounded-lg text-white bg-mGray3 mb-4'
+  }
 
   return (
     <>
@@ -75,7 +79,9 @@ export default function SidebarChannels() {
         <div className='flex justify-between items-center cursor-pointer w-full'>
           <span className='font-bold mr-4 text-white'>Channels</span>
           <span
-            onClick={() => setIsOpen(true)}
+            onClick={() => {
+              setIsOpen(true)
+            }}
             className='font-bold text-xl h-8 w-8 rounded text-white bg-mBg flex justify-center items-center hover:bg-mBlue hover:text-white transition-all duration-300'
           >
             {' '}
@@ -104,7 +110,6 @@ export default function SidebarChannels() {
       {/* List of channels */}
       <div className='h-full px-4 overflow-y-auto'>
         <div className='h-auto'>
-          {/* <h3 className="font-bold text-xl uppercase my-8">Members</h3> */}
           <ul>
             {roomsData.map((room, index) => (
               <li
@@ -125,7 +130,6 @@ export default function SidebarChannels() {
       </div>
       <Dialog open={isOpen} onClose={() => setIsOpen(false)} className='relative z-50'>
         <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
-
         <div className='fixed inset-0 flex w-screen items-center justify-center p-4'>
           <Dialog.Panel className='mx-auto max-w-screen-md rounded bg-[#120F13]'>
             <Dialog.Title>
@@ -136,26 +140,26 @@ export default function SidebarChannels() {
                       <p className='uppercase text-[#F2F2F2] font-bold text-[18px] mb-6'>New channel</p>
                       <div className='relative'>
                         <input
-                          className='w-[512px] py-3 px-4 rounded-lg text-white bg-mGray3 mb-6'
+                          className={inputError.errors}
                           type='text'
                           placeholder='Channel name'
                           {...register('channel_name')}
                           name='channel_name'
                           // ref={newRoomRef}
                         />
-                        <p className='text-sm mt-2 font-medium text-destructive text-red-600'>
+                        <p className='text-sm font-medium text-destructive text-red-600'>
                           {errors.channel_name?.message}
                         </p>
                       </div>
                       <div className='relative'>
                         <textarea
-                          className='w-[512px] py-3 px-4 rounded-lg text-white bg-mGray3 mb-4'
+                          className={inputError.errors}
                           placeholder='Channel Description'
                           rows={3}
                           {...register('description')}
                           name='description'
                         />
-                        <p className='text-sm mt-2 font-medium text-destructive text-red-600'>
+                        <p className='text-sm font-medium text-destructive text-red-600'>
                           {errors.description?.message}
                         </p>
                       </div>

@@ -10,13 +10,11 @@ export default function SidebarUsers() {
     <>
       {' '}
       <header className='h-16 flex items-center shadow-lg w-full mb-2 px-4'>
-        <div className='cursor-pointer text-mWhite'>
-          <span
-            className='font-bold mr-4'
-            onClick={() => setShowChannelList(!showChannelList, setChannel === null, setCurrentRoom(''))}
-          >
-            {'<'}
-          </span>
+        <div
+          className='cursor-pointer text-mWhite'
+          onClick={() => setShowChannelList(!showChannelList, setChannel === null, setCurrentRoom(''))}
+        >
+          <span className='font-bold mr-4'>{'<'}</span>
           <span className='font-bold'>All channels</span>
         </div>
       </header>

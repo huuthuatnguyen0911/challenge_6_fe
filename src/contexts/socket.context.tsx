@@ -9,7 +9,7 @@ interface SocketContextProps {
   roomId?: string
   currentroomId?: string
   rooms: any
-  messages: { message: string; username: string; time: string; avatar: string }[]
+  messages: { content: string; username: string; time: string; avatar: string }[]
   setMessages: Function
   setAvatar: Function
   currentRoom: string
@@ -20,7 +20,7 @@ interface SocketContextProps {
   setShowChannelList: Function
 }
 
-const socket = io(import.meta.env.VITE_API_URL_SOCKET as string)
+const socket = io(import.meta.env.VITE_API_URL as string)
 
 const SocketContext = createContext<SocketContextProps>({
   socket,
@@ -56,18 +56,19 @@ function SocketProvider(props: any) {
     setMessages([])
   })
 
-  socket.on(EVENTS.SERVER.ROOM_MESSAGE, ({ roomId, message, username, time, avatar }) => {
-    if (currentroomId !== roomId) return
+  socket.on(EVENTS.SERVER.ROOM_MESSAGE, ({ roomId, content, username, time, avatar }) => {
     if (currentroomId === roomId) {
       setMessages([
         ...messages,
         {
-          message,
+          content,
           username,
           time,
           avatar
         }
       ])
+    } else {
+      setMessages([...messages])
     }
   })
 

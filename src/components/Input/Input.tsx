@@ -10,9 +10,10 @@ interface Props extends InputHTMLAttributes<HTMLInputElement> {
 }
 export default function Input({ errorMessages, className, name, register, rules, classNameInput, ...rest }: Props) {
   const registerResult = register && name ? register(name, rules) : null
+  const classError = errorMessages ? 'border-red-500' : ''
   const classInput = classNameInput
     ? classNameInput
-    : 'flex h-12 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-primary ring-offset-background transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground  focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-button focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 pl-12'
+    : `flex h-12 w-full rounded-md border border-border bg-background px-3 py-2 text-sm text-primary ring-offset-background transition-colors file:border-0 file:bg-transparent file:text-sm file:font-medium disabled:cursor-not-allowed disabled:opacity-50 pl-12 ${classError}`
   return (
     <div className={className}>
       {' '}
