@@ -72,7 +72,6 @@ export default function SidebarChannels() {
         ? 'w-[512px] py-3 px-4 rounded-lg text-white bg-mGray3 mb-4 border border-red-500'
         : 'w-[512px] py-3 px-4 rounded-lg text-white bg-mGray3 mb-4'
   }
-
   return (
     <>
       <header className='h-16 flex flex-none items-center shadow-lg w-full mb-2 px-4'>
@@ -90,7 +89,6 @@ export default function SidebarChannels() {
         </div>
       </header>
 
-      {/* Search Input */}
       <div className='px-4 mb-6'>
         <div className='mb-4'>
           <div className='flex bg-[#3C393F] items-center border px-2 py-1 border-mGray-2 rounded-md  '>
@@ -107,7 +105,6 @@ export default function SidebarChannels() {
         </div>
       </div>
 
-      {/* List of channels */}
       <div className='h-full px-4 overflow-y-auto'>
         <div className='h-auto'>
           <ul>
@@ -128,6 +125,7 @@ export default function SidebarChannels() {
           </ul>
         </div>
       </div>
+
       <Dialog open={isOpen} onClose={() => setIsOpen(false)} className='relative z-50'>
         <div className='fixed inset-0 bg-black/30' aria-hidden='true' />
         <div className='fixed inset-0 flex w-screen items-center justify-center p-4'>

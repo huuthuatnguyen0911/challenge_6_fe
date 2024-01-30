@@ -3,11 +3,11 @@ import { SuccessResponse } from 'src/types/utils.type';
 import http from 'src/utils/https'
 
 const messageApi = {
-  getMessageByRoomId(roomId: string, limit: string, page: string) {
+  getMessageByRoomId(roomId: string) {
     return http.get<SuccessResponse<Message>>(`/messages/get-message/${roomId}`, {
       params: {
-        limit,
-        page,
+        limit: 30,
+        page: 1,
       }
     })
   }

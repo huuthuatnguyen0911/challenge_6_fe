@@ -1,4 +1,4 @@
-import { useContext, useEffect, useRef, useState } from 'react'
+import { useContext, useEffect, useRef } from 'react'
 import SidebarChannels from 'src/components/ChatComponent/SidebarChannels/SidebarChannels'
 import default_user from '../../assets/default_user.png'
 import Helmet from 'src/components/Helmet/Helmet'
@@ -10,22 +10,13 @@ import { useMutation } from '@tanstack/react-query'
 import messageApi from 'src/apis/message.api'
 import { AppContext } from 'src/contexts/app.context'
 import { IMessage } from 'src/types/message.type'
-import InfiniteScroll from 'react-infinite-scroll-component'
-
-const LIMIT = 10
-const PAGE = 1
 export default function ChatPage() {
   const { messages, currentRoom, showChannelList, setMessages, currentroomId } = useSockets()
   const messagesContainerRef = useRef<HTMLDivElement>(null)
-  const [pagination, setPagination] = useState({ total_page: 0, page: PAGE })
   const { profile } = useContext(AppContext)
-  useEffect(() => {
-    messagesContainerRef.current?.scrollIntoView({ behavior: 'smooth' })
-  }, [messages])
 
   const { mutate: getMessages } = useMutation({
-    mutationFn: ({ roomId, limit, page }: { roomId: string; limit: string; page: string }) =>
-      messageApi.getMessageByRoomId(roomId, limit, page),
+    mutationFn: (roomId: string) => messageApi.getMessageByRoomId(roomId),
     onSuccess: (data) => {
       const result = data?.data?.data?.result
       if (data && result !== null) {
@@ -40,14 +31,20 @@ export default function ChatPage() {
   })
 
   useEffect(() => {
+    messagesContainerRef.current?.scrollIntoView({ behavior: 'smooth' })
+  }, [messages])
+
+  useEffect(() => {
     if (currentroomId) {
-      getMessages({ roomId: currentroomId, limit: (10).toString(), page: (1).toString() })
+      getMessages(currentroomId)
     }
   }, [currentroomId])
 
-  const fetchMoreConversations = () => {
-    console.log('fetchMoreConversations')
-  }
+  // const date = new Date().toLocaleString('en-US', {
+  //   month: 'long',
+  //   day: 'numeric',
+  //   year: 'numeric'
+  // })
 
   return (
     <div className='h-screen w-full flex'>
@@ -87,57 +84,36 @@ export default function ChatPage() {
         {currentRoom && (
           <>
             {/* Hiển thị tin nhắn ở đây */}
-            <div
-              id='scrollableDiv'
-              style={{
-                height: 'h-full',
-                overflow: 'auto',
-                display: 'flex',
-                flexDirection: 'column-reverse'
-              }}
-            >
-              {/*Put the scroll bar always on the bottom*/}
-              <InfiniteScroll
-                dataLength={messages.length}
-                next={fetchMoreConversations}
-                style={{ display: 'flex', flexDirection: 'column-reverse' }} //To put endMessage and loader to the top.
-                inverse={true} //
-                hasMore={true}
-                loader={<h4>Loading...</h4>}
-                scrollableTarget='scrollableDiv'
-              >
-                <div className='container mx-auto px-4 lg:px-10 h-auto flex-auto overflow-y-auto'>
-                  <div className='h-full'>
-                    {messages.map(({ content, username, avatar, time }, index) => (
-                      <ul key={index} className='h-auto'>
-                        <h3
-                          style={{
-                            lineHeight: '0.1em',
-                            margin: '10px 0 20px',
-                            borderColor: '#ffffff1f'
-                          }}
-                          className='w-full border-b text-center border-opacity-25'
-                        >
-                          <span style={{ padding: '0 10px' }} className='bg-chatBg'>
-                            {/* {date} */}
-                          </span>
-                        </h3>
-                        <div className={`flex mb-6 `}>
-                          <img className='w-10 h-10 rounded' src={avatar || default_user} />
-                          <div className='ml-6'>
-                            <div className='text-mGray font-bold mb-2'>
-                              {username}
-                              <span className='font-normal text-xs ml-6'>{time}</span>
-                            </div>
-                            <div className='text-mWhite font-normal text-sm break-all'>{content}</div>
-                          </div>
+            <div className='container mx-auto px-4 lg:px-10 h-auto flex-auto overflow-y-auto'>
+              <div className='h-full'>
+                {messages.map(({ content, username, avatar, time }, index) => (
+                  <ul key={index} className='h-auto'>
+                    <h3
+                      style={{
+                        lineHeight: '0.1em',
+                        margin: '10px 0 20px',
+                        borderColor: '#ffffff1f'
+                      }}
+                      className='w-full border-b text-center border-opacity-25'
+                    >
+                      <span style={{ padding: '0 10px' }} className='bg-chatBg'>
+                        {/* {date} */}
+                      </span>
+                    </h3>
+                    <div className={`flex mb-6 `}>
+                      <img className='w-10 h-10 rounded' src={avatar || default_user} />
+                      <div className='ml-6'>
+                        <div className='text-mGray font-bold mb-2'>
+                          {username}
+                          <span className='font-normal text-xs ml-6'>{time}</span>
                         </div>
-                      </ul>
-                    ))}
-                    <div ref={messagesContainerRef} />
-                  </div>
-                </div>
-              </InfiniteScroll>
+                        <div className='text-mWhite font-normal text-sm break-all'>{content}</div>
+                      </div>
+                    </div>
+                  </ul>
+                ))}
+                <div ref={messagesContainerRef} />
+              </div>
             </div>
 
             {/* Input nhập tin nhắn chat */}
