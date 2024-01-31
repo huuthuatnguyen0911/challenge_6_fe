@@ -7,9 +7,7 @@ type Props = {
 export default function SocialFooter({ children }: Props) {
   return (
     <div className='flex w-full flex-col gap-5 text-center'>
-      <span className='text-[#828282] mt-8 inline-block text-sm text-secondary'>
-        or continue with these social profile
-      </span>
+      <span className='mt-8 inline-block text-sm text-secondary'>or continue with these social profile</span>
       <div className='mb-4 flex items-center justify-center gap-4 sm:mb-2'>
         <div className='flex gap-5 rounded-full p-0 hover:bg-input focus:bg-input'>
           <svg viewBox='0 0 43 43' fill='none' xmlns='http://www.w3.org/2000/svg' className='h-11 w-11'>
@@ -46,7 +44,7 @@ export default function SocialFooter({ children }: Props) {
           </svg>
         </div>
       </div>
-      <span className='inline-block text-sm text-secondary text-[#828282]'>{children}</span>
+      <span className='inline-block text-sm text-secondary'>{children}</span>
     </div>
   )
 }
