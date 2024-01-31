@@ -112,7 +112,7 @@ export default function EditPage() {
       setProfile(res.data.data)
       setProfileToLS(res.data.data)
       refetch()
-      toast.success(res.data.message)
+      toast.success(res.data.message, { autoClose: 2500 })
     } catch (error) {
       if (isAxiosUnprocessableEntityError<ErrorResponse<ErrorRes>>(error)) {
         const formErrors = error.response?.data

@@ -13,6 +13,6 @@ export interface IMessage {
   username: string,
   time: string,
   avatar: string,
-  createdAt: string,
+  created_at: Date,
   updatedAt: string,
 }

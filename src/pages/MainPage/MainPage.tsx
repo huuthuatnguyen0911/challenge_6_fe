@@ -28,9 +28,11 @@ export default function MainPage() {
               Some info may be visible to other people
             </p>
           </div>
-          <button className='text-[#828282] text-[16px] px-8 py-2 rounded-lg border-2 border-gray-100 hover:bg-slate-100 bg-white'>
-            <Link to='/edit'>Edit</Link>
-          </button>
+          <Link to='/edit'>
+            <button className='text-[#828282] text-[16px] px-8 py-2 rounded-lg border-2 border-gray-100 hover:bg-slate-100 bg-white'>
+              Edit
+            </button>
+          </Link>
         </div>
 
         <div className='shrink-0 bg-border h-[1px] w-full hidden sm:block'></div>

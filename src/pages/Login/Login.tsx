@@ -86,7 +86,6 @@ export default function Login() {
                   register={register}
                   name='email'
                   errorMessages={errors.email?.message}
-                  // className={errors.email?.message ? 'border-red-500' : ''}
                 />
               </div>
               <div className='relative'>
@@ -98,7 +97,6 @@ export default function Login() {
                   name='password'
                   register={register}
                   errorMessages={errors.password?.message}
-                  // className={errors.password?.message ? 'border-red-500' : ''}
                 />
               </div>
               <Button

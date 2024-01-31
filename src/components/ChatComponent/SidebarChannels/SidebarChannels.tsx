@@ -143,7 +143,6 @@ export default function SidebarChannels() {
                           placeholder='Channel name'
                           {...register('channel_name')}
                           name='channel_name'
-                          // ref={newRoomRef}
                         />
                         <p className='text-sm font-medium text-destructive text-red-600'>
                           {errors.channel_name?.message}

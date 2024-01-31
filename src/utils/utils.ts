@@ -25,13 +25,10 @@ export const formatDate = (date: Date) => {
   const targetDate = moment(date);
 
   if (now.diff(targetDate, 'days') === 0) {
-    // Nếu là ngày hiện tại
     return `today at ${targetDate.format('h:mm A')}`;
   } else if (now.diff(targetDate, 'days') === 1) {
-    // Nếu là ngày hôm qua
     return `yesterday at ${targetDate.format('h:mm A')}`;
   } else {
-    // Nếu là một ngày khác
     return targetDate.format('MMMM D [at] h:mm A');
   }
 }

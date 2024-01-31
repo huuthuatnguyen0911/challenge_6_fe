@@ -6,7 +6,7 @@ const messageApi = {
   getMessageByRoomId(roomId: string) {
     return http.get<SuccessResponse<Message>>(`/messages/get-message/${roomId}`, {
       params: {
-        limit: 30,
+        limit: 100,
         page: 1,
       }
     })
